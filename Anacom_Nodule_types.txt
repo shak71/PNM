@@ -1,0 +1,12 @@
+Genus	clr	W
+Bradyrhizobium	-3.703244498	150
+Streptomyces	4.347431524	147
+Niastella	3.410195668	140
+Allorhizobium-Neorhizobium-Pararhizobium-Rhizobium	3.176960522	138
+Sphingomonas	2.510678672	110
+Novosphingobium	2.675381089	102
+Chitinophaga	2.067436453	101
+Caulobacter	1.937478685	85
+Variovorax	1.995933471	74
+Mycobacterium	1.493914088	31
+Micromonosporaceae	3.202482473	21
