@@ -1,0 +1,79 @@
+
+library(gplots)
+library(RColorBrewer)
+library(pheatmap)
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+############# Fig. 6
+
+step:1
+data <-read.delim(file = "Nitrogen_12-09-2022.txt")
+head(data)
+
+#Step2 : Transform data matrix
+
+fontes <-data[,1]   # Assign names to column 1 "rnames"
+fontes
+data <-data.matrix(data[,2:ncol(data)])     # Transforms the remaining columns in a matrix
+data
+rownames(data) <- fontes            # Assign line names
+rownames(data)
+
+View (data)                     # show matrix as sheet.
+summary(data)
+
+
+# step 3:Default Heatmap
+pheatmap(data)
+
+pheatmap(data, cellwidth = 30, cellheight = 12, fontsize = 12, filename = "Nitrogen_pathway.pdf")
+
+################## Fig. 7
+
+step:1
+data <-read.delim(file = "Phosphate_met_12-09-22.txt")
+head(data)
+
+#Step2 : Transform data matrix
+
+fontes <-data[,1]   # Assign names to column 1 "rnames"
+fontes
+data <-data.matrix(data[,2:ncol(data)])     # Transforms the remaining columns in a matrix
+data
+rownames(data) <- fontes            # Assign line names
+rownames(data)
+
+View (data)                     # show matrix as sheet.
+summary(data)
+
+# step 3:Default Heatmap
+pheatmap(data)
+
+pheatmap(data, cellwidth = 30, cellheight = 12, fontsize = 12, filename = "Phosphate_pathway.pdf")
+
+
+############# Fig. 8 
+
+
+step:1
+data <-read.delim(file = "Small_nodule_Pathway_unique_common.txt")
+head(data)
+
+#Step2 : Transform data matrix
+
+fontes <-data[,1]   # Assign names to column 1 "rnames"
+fontes
+data <-data.matrix(data[,2:ncol(data)])     # Transforms the remaining columns in a matrix
+data
+rownames(data) <- fontes            # Assign line names
+rownames(data)
+
+View (data)                     # show matrix as sheet.
+summary(data)
+
+
+# step 3:Default Heatmap
+
+pheatmap(data, cellwidth = 30, cellheight = 12, fontsize = 12, filename = "Fig.8.pdf")

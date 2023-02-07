@@ -1,0 +1,94 @@
+
+library(tidyverse)
+library(rstatix)
+library(ggpubr)
+library(coin) 
+
+######## For Fig.2A:
+
+data <- read.delim("Taxa_observed1.txt",header=TRUE)
+head(data)
+
+  X Taxa_observed Group
+1 1             9   Big
+2 2             8   Big
+3 3             7   Big
+4 4             8   Big
+5 5             5   Big
+6 6             6   Big
+
+##
+sample_n_by(data, Group, replace = FALSE)
+
+# A tibble: 2 x 3
+      X Taxa_observed Group
+  <int>         <int> <chr>
+1     1             9 Big  
+2    21           235 Small
+#
+set.seed(1)
+data %>% sample_n_by(Group)
+
+# A tibble: 2 x 3
+      X Taxa_observed Group
+  <int>         <int> <chr>
+1     9             7 Big  
+2    15            24 Small
+
+
+### Summary statistics
+Compute some summary statistics by groups: median and interquartile range.
+
+data %>%
+  group_by(Group) %>%  
+  get_summary_stats(Taxa_observed, type = "median_iqr")
+
+# A tibble: 2 x 5
+  Group variable          n median   iqr
+  <chr> <fct>         <dbl>  <dbl> <dbl>
+1 Big   Taxa_observed    11    7     2.5
+2 Small Taxa_observed    12   88.5 102  
+
+### Visualization
+Visualize the data using box plots. Plot weight by groups:
+
+bxp <- ggboxplot(data, x = "Group", y = "Taxa_observed", color = "Group", palette = "UCSCGB",
+  ylab = "Observed ASVs", xlab = "Nodule_types", add = "jitter"
+  ) 
+
+bxp
+
+
+## Significance test
+
+stat.test <- data %>% 
+  rstatix::wilcox_test(Taxa_observed ~ Group) %>%
+  add_significance()
+
+stat.test
+
+# A tibble: 1 x 8
+  .y.           group1 group2    n1    n2 statistic         p p.signif
+  <chr>         <chr>  <chr>  <int> <int>     <dbl>     <dbl> <chr>   
+1 Taxa_observed Big    Small     11    12         0 0.0000543 ****    
+
+## Effect size:
+data %>% wilcox_effsize(Taxa_observed ~ Group)
+
+# A tibble: 1 x 7
+  .y.           group1 group2 effsize    n1    n2 magnitude
+* <chr>         <chr>  <chr>    <dbl> <int> <int> <ord>    
+1 Taxa_observed Big    Small    0.848    11    12 large 
+
+###
+stat.test <- stat.test %>% add_xy_position(x = "Group")
+bxp + 
+  stat_pvalue_manual(stat.test, tip.length = 0) +
+  labs(subtitle = get_test_label(stat.test, "p.signif"))
+
+alternative:
+stat.test <- stat.test %>% add_xy_position(x = "Group")
+bxp + 
+  stat_pvalue_manual(stat.test, tip.length = 0) +
+  labs(subtitle = get_test_label(stat.test, detailed = TRUE))
+

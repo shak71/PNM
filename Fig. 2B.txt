@@ -1,0 +1,86 @@
+
+library(tidyverse)
+library(rstatix)
+library(ggpubr)
+library(coin) 
+
+######## For Fig.2B:
+
+data <- read.delim("shannon2.txt",header=TRUE)
+head(data)
+  id   shannon Nodule
+1  1 1.0467729    Big
+2  2 1.1552016    Big
+3  3 0.9053902    Big
+4  4 1.1364333    Big
+5  5 0.9063910    Big
+6  6 1.1228527    Big
+
+##
+sample_n_by(data, Nodule, replace = FALSE)
+
+#
+set.seed(1)
+data %>% sample_n_by(Nodule)
+
+# A tibble: 2 x 3
+     id shannon Nodule
+  <int>   <dbl> <chr> 
+1     9    1.50 Big   
+2    15    3.18 Small 
+
+### Summary statistics
+Compute some summary statistics by groups: median and interquartile range.
+
+data %>%
+  group_by(Nodule) %>%  
+  get_summary_stats(shannon, type = "median_iqr")
+
+# A tibble: 2 x 5
+  Nodule variable     n median   iqr
+  <chr>  <fct>    <dbl>  <dbl> <dbl>
+1 Big    shannon     11   1.14  0.2 
+2 Small  shannon     12   3.02  3.38
+
+### Visualization
+Visualize the data using box plots. Plot weight by groups:
+
+bxp <- ggboxplot(data, x = "Nodule", y = "shannon", color = "Nodule", palette = "UCSCGB",
+  ylab = "Shannon Diversity Index", xlab = "Nodule_types", add = "jitter"
+  ) 
+bxp
+
+
+## Significance test
+
+stat.test <- data %>% 
+  rstatix::wilcox_test(shannon ~ Nodule) %>%
+  add_significance()
+
+stat.test
+
+# A tibble: 1 x 8
+  .y.     group1 group2    n1    n2 statistic        p p.signif
+  <chr>   <chr>  <chr>  <int> <int>     <dbl>    <dbl> <chr>   
+1 shannon Big    Small     11    12        11 0.000288 ***  
+
+## Effect size:
+data %>% wilcox_effsize(shannon ~ Nodule)
+
+# A tibble: 1 x 7
+  .y.     group1 group2 effsize    n1    n2 magnitude
+* <chr>   <chr>  <chr>    <dbl> <int> <int> <ord>    
+1 shannon Big    Small    0.706    11    12 large
+
+###
+stat.test <- stat.test %>% add_xy_position(x = "Nodule")
+bxp + 
+  stat_pvalue_manual(stat.test, tip.length = 0) +
+  labs(subtitle = get_test_label(stat.test, "p.signif"))
+
+alternative:
+stat.test <- stat.test %>% add_xy_position(x = "Nodule")
+bxp + 
+  stat_pvalue_manual(stat.test, tip.length = 0) +
+  labs(subtitle = get_test_label(stat.test, detailed = TRUE))
+

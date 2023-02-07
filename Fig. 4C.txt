@@ -1,0 +1,56 @@
+library(tidyverse)
+library(qiime2R)
+library(dada2)
+library(phyloseq)
+library(ggplot2)
+
+##
+ps_small_dev <- readRDS("ps_small_dev.rds")
+ps_small_dev
+
+phyloseq-class experiment-level object
+otu_table()   OTU Table:         [ 492 taxa and 12 samples ]
+sample_data() Sample Data:       [ 12 samples by 11 sample variables ]
+tax_table()   Taxonomy Table:    [ 492 taxa by 7 taxonomic ranks ]
+
+# Calculate relative abundance
+psdg.rel_abund <- transform_sample_counts(ps_small_dev, function(x) x / sum(x) )
+psdg.rel_abund
+
+phyloseq-class experiment-level object
+otu_table()   OTU Table:         [ 492 taxa and 12 samples ]
+sample_data() Sample Data:       [ 12 samples by 11 sample variables ]
+tax_table()   Taxonomy Table:    [ 492 taxa by 7 taxonomic ranks ]
+
+## Merge samples
+psdg_taxa <- merge_samples(psdg.rel_abund, "GN_com")
+psdg_taxa
+
+phyloseq-class experiment-level object
+otu_table()   OTU Table:         [ 492 taxa and 3 samples ]
+sample_data() Sample Data:       [ 3 samples by 11 sample variables ]
+tax_table()   Taxonomy Table:    [ 492 taxa by 7 taxonomic ranks ]
+
+### Agglomerate taxa at genus level
+psdg <- tax_glom(psdg_taxa, taxrank = "Genus")
+psdg
+
+phyloseq-class experiment-level object
+otu_table()   OTU Table:         [ 133 taxa and 3 samples ]
+sample_data() Sample Data:       [ 3 samples by 11 sample variables ]
+tax_table()   Taxonomy Table:    [ 133 taxa by 7 taxonomic ranks ]
+
+# remove uncultured taxa
+psdg.un <- subset_taxa(psdg, Genus !="uncultured")
+psdg.un
+
+phyloseq-class experiment-level object
+otu_table()   OTU Table:         [ 118 taxa and 3 samples ]
+sample_data() Sample Data:       [ 3 samples by 11 sample variables ]
+tax_table()   Taxonomy Table:    [ 118 taxa by 7 taxonomic ranks ]
+
+## Save file
+write.csv(otu_table(psdg.un), "psdg_taxa.csv")
+
+## Taxa were selected based on the relative abundance > 0 from three growth stages of small nodules from 
+the saved file "psdg_taxa.csv" and a Venn diagram was made using Venny webtool version 2.1.0 (https://bioinfogp.cnb.csic.es/tools/venny/).

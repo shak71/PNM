@@ -1,0 +1,85 @@
+library(phyloseq)
+library(qiime2R)
+library(zoo)
+library(scale)
+library(tidyverse)
+
+##
+ps <- readRDS(file = "PNM.rds")
+
+ps
+
+phyloseq-class experiment-level object
+otu_table()   OTU Table:         [ 492 taxa and 23 samples ]
+sample_data() Sample Data:       [ 23 samples by 9 sample variables ]
+tax_table()   Taxonomy Table:    [ 492 taxa by 7 taxonomic ranks ]
+phy_tree()    Phylogenetic Tree: [ 492 tips and 488 internal nodes ]
+
+### Microbial Abundandce
+
+ps_relabund <- transform_sample_counts(ps, function(x) x / sum(x))
+
+ps_relabund
+
+phyloseq-class experiment-level object
+otu_table()   OTU Table:         [ 492 taxa and 23 samples ]
+sample_data() Sample Data:       [ 23 samples by 9 sample variables ]
+tax_table()   Taxonomy Table:    [ 492 taxa by 7 taxonomic ranks ]
+phy_tree()    Phylogenetic Tree: [ 492 tips and 488 internal nodes ]
+
+# convert to data frame for easier access
+tax_table <- as.data.frame(ps_relabund@tax_table@.Data)
+
+# phylum
+unique(tax_table$Phylum)
+ 
+[1] "Patescibacteria"   "Armatimonadota"    "Bacteroidota"     
+ [4] "Dependentiae"      "Acidobacteriota"   "Verrucomicrobiota"
+ [7] "Planctomycetota"   "Cyanobacteria"     "Actinobacteriota" 
+[10] "Firmicutes"        "Chloroflexi"       "Gemmatimonadota"  
+[13] "Myxococcota"       "Bdellovibrionota"  "Proteobacteria" 
+
+##Sample data:
+ps_relabund@sam_data
+
+# 
+plot_abundance <- function(x = ps_relabund, # phyloseq data
+                           title = "",
+                           Facet = "Phylum", # taxa rank for facets
+                           Category = "Nodule_type", # categorical features for x axis
+                           Color = "Phylum",
+                           legend = "none"
+                           ) {
+  
+  mps <- psmelt(x)
+  mps <- subset(mps, Abundance > 0)
+  
+  ggplot(data = mps, 
+         mapping = aes_string(x = Category,
+                              y = "Abundance",
+                              color = Color, fill = Color)
+        ) +
+    geom_violin(fill = NA) +
+    geom_point(size = 1, alpha = 0.3, 
+               position = position_jitter(width = 0.3)) +
+    facet_wrap(facets = Facet, ncol = 3) + 
+    scale_y_log10() +
+    labs(title = title) +
+    theme(legend.position = legend)
+}
+
+# plotting abundance
+plot <- plot_abundance(ps_relabund, 
+                       "Microbial Abundance on All Phylum")
+
+plot
+
+##subset taxa for Proteobacteria and Actnobacteria
+
+ps_reProAc <-  subset_taxa(ps_relabund, Phylum %in% c("Proteobacteria", "Actinobacteriota"))
+
+
+plot_reProAc <- plot_abundance(ps_reProAc,
+               title = "Microbial Abundance on Phylum",
+               Facet = "Phylum")
+plot_reProAc

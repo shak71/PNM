@@ -1,0 +1,118 @@
+#####
+library(microbiome)
+library(patchwork)
+library(dplyr)
+library(ggplot2)
+library(phyloseq)
+library(microViz)
+library(qiime2R)
+library(knitr)
+
+knitr::opts_chunk$set(fig.width = 7, fig.height = 6)
+
+## Read files
+
+pseq <- readRDS("PNM1.rds")
+
+pseq
+
+phyloseq-class experiment-level object
+otu_table()   OTU Table:         [ 492 taxa and 23 samples ]
+sample_data() Sample Data:       [ 23 samples by 11 sample variables ]
+tax_table()   Taxonomy Table:    [ 492 taxa by 7 taxonomic ranks ]
+
+## Validating phyloseq
+
+pseq <- tax_fix(pseq) 
+
+#
+pseq <- phyloseq_validate(pseq, remove_undetected = TRUE)
+
+#
+pseq1 <- subset_taxa(pseq, Genus !="uncultured")
+
+####
+pseq1 %>% 
+  tax_filter(min_prevalence = 1 / 100, tax_level = "Genus") %>%
+  tax_agg("Genus") %>%
+  dist_calc("aitchison") %>% 
+dist_permanova(
+    variables = c("Nodule_type", "Growth_stages"),
+    n_perms = 999, 
+    seed = 12345, complete_cases = TRUE, verbose = "max"
+  )
+
+Proportional min_prevalence given: 0.01 --> min 1/23 samples.
+Dropping samples with missings: 0
+2023-02-06 16:19:23 - Starting PERMANOVA with 999 perms with 1 processes
+2023-02-06 16:19:23 - Finished PERMANOVA
+psExtra object - a phyloseq object with extra slots:
+
+phyloseq-class experiment-level object
+otu_table()   OTU Table:         [ 135 taxa and 23 samples ]
+sample_data() Sample Data:       [ 23 samples by 11 sample variables ]
+tax_table()   Taxonomy Table:    [ 135 taxa by 6 taxonomic ranks ]
+
+psExtra info:
+tax_agg = "Genus" 
+
+aitchison distance matrix of size 23 
+2.48279 2.724471 4.688155 3.284909 4.227942 ...
+
+permanova:
+Permutation test for adonis under reduced model
+Marginal effects of terms
+Permutation: free
+Number of permutations: 999
+
+vegan::adonis2(formula = formula, data = metadata, permutations = n_perms, by = by, parallel = parall)
+              Df SumOfSqs      R2      F Pr(>F)    
+Nodule_type    1   1304.3 0.23841 7.0488  0.001 ***
+Growth_stages  2    608.2 0.11117 1.6435  0.061 .  
+Residual      19   3515.6 0.64263                  
+Total         22   5470.7 1.00000                  
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+
+######################################################
+pseq1 %>% 
+  tax_transform(trans = "clr", rank = "Genus")
+
+psExtra object - a phyloseq object with extra slots:
+
+phyloseq-class experiment-level object
+otu_table()   OTU Table:         [ 135 taxa and 23 samples ]
+sample_data() Sample Data:       [ 23 samples by 11 sample variables ]
+tax_table()   Taxonomy Table:    [ 135 taxa by 6 taxonomic ranks ]
+
+otu_get(counts = TRUE)		 [ 135 taxa and 23 samples ]
+
+psExtra info:
+tax_agg = "Genus" tax_trans = "clr"  
+
+### 
+pseq1 %>% 
+  tax_transform("clr", rank = "Genus") %>% 
+  ord_calc() %>% 
+  ord_plot(color = "Nodule_type", shape = "Growth_stages", size = 2) +
+  scale_colour_brewer(palette = "Dark2")
+
+### Fig. 3A 
+pseq1 %>% 
+  tax_transform("clr", rank = "Genus") %>% 
+  ord_calc(method = "PCA") %>% 
+  ord_plot(color = "Nodule_type", shape = "Growth_stages", plot_taxa = 1:5, size = 2) +
+  scale_colour_brewer(palette = "Dark2")
+
+## Fig. 3B 
+pseq1 %>% 
+  tax_transform("clr", rank = "Genus") %>% 
+  ord_calc() %>% 
+  ord_plot_iris(tax_level = "Genus", ord_plot = "above", anno_colour = "Growth_stages")
+
+
+
+
+
+

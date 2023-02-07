@@ -1,0 +1,34 @@
+library(tidyverse)
+library(phyloseq)
+library(knitr)
+library(ggplot2)
+library(RColorBrewer)
+
+
+ps <- readRDS("PNM1.rds")
+
+ps
+
+phyloseq-class experiment-level object
+otu_table()   OTU Table:         [ 492 taxa and 23 samples ]
+sample_data() Sample Data:       [ 23 samples by 11 sample variables ]
+tax_table()   Taxonomy Table:    [ 492 taxa by 7 taxonomic ranks ]
+
+
+ps1 <- tax_glom(ps, "Phylum")
+ps0 <- transform_sample_counts(ps1, function(x) x / sum(x))
+ps2 <- merge_samples(ps0, "GN_com")
+ps3 <- transform_sample_counts(ps2, function(x) x / sum(x))
+plot_bar(ps3, fill="Phylum") +
+geom_bar(position = "stack", stat="identity") 
+
+###  To set Palette
+taxic <- as.data.frame(ps3@tax_table)  
+
+#
+colourCount = length(unique(taxic$Phylum))  #define number of variable colors based on number of Family (change the level accordingly to phylum/class/order)
+getPalette = colorRampPalette(brewer.pal(12, "Paired"))  # change the palette as well as the number of colors will change according to palette.
+
+plot_bar(ps3, fill="Phylum") +
+geom_bar(position = "stack", stat="identity") +
+scale_fill_manual("Phyla", values = getPalette(colourCount))

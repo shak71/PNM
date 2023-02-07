@@ -1,0 +1,94 @@
+
+library(tidyverse)
+library(rstatix)
+library(ggpubr)
+library(coin) 
+
+######## For Fig.2C:
+
+data <- read.delim("WU_group significance.txt",header=TRUE)
+head(data)
+  id Growth_stages          WU Group
+1  1          R2_b 0.002457024   Big
+2  2          R2_b 0.002475664   Big
+3  3          R2_b 0.000798927   Big
+4  4          R2_b 0.002257341   Big
+5  5          R2_b 0.000580603   Big
+6  6          R2_b 0.000218324   Big
+
+#
+sample_n_by(data, Group, replace = FALSE)
+
+
+# A tibble: 2 x 4
+     id Growth_stages       WU Group
+  <int> <chr>            <dbl> <chr>
+1    50 R7_b          0.000559 Big  
+2   173 R7_s          0.455    Small
+
+#
+set.seed(1)
+data %>% sample_n_by(Group)
+
+# A tibble: 2 x 4
+     id Growth_stages      WU Group
+  <int> <chr>           <dbl> <chr>
+1     4 R2_b          0.00226 Big  
+2   184 R7_s          0.0727  Small
+
+### Summary statistics
+Compute some summary statistics by groups: median and interquartile range.
+
+data %>%
+  group_by(Group) %>%  
+  get_summary_stats(WU, type = "median_iqr")
+
+# A tibble: 2 x 5
+  Group variable     n median   iqr
+  <chr> <fct>    <dbl>  <dbl> <dbl>
+1 Big   WU          55  0.001 0.001
+2 Small WU         132  0.257 0.348
+
+### Visualization
+Visualize the data using box plots. Plot weight by groups:
+
+bxp <- ggboxplot(data, x = "Group", y = "WU", color = "Group", palette = "UCSCGB",
+  ylab = "Weighted Unifrac Distance", xlab = "Nodule_types", add = "jitter"
+  )     
+bxp
+
+
+## Significant test
+
+stat.test <- data %>% 
+  rstatix::wilcox_test(WU ~ Group) %>%
+  add_significance()
+
+stat.test
+
+# A tibble: 1 x 8
+  .y.   group1 group2    n1    n2 statistic        p p.signif
+  <chr> <chr>  <chr>  <int> <int>     <dbl>    <dbl> <chr>   
+1 WU    Big    Small     55   132         0 5.21e-27 ****  
+
+## Effect size:
+data %>% wilcox_effsize(WU ~ Group)
+
+# A tibble: 1 x 7
+  .y.   group1 group2 effsize    n1    n2 magnitude
+* <chr> <chr>  <chr>    <dbl> <int> <int> <ord>    
+1 WU    Big    Small    0.787    55   132 large
+
+
+###
+stat.test <- stat.test %>% add_xy_position(x = "Group")
+bxp + 
+  stat_pvalue_manual(stat.test, tip.length = 0) +
+  labs(subtitle = get_test_label(stat.test, "p.signif"))
+
+alternative:
+stat.test <- stat.test %>% add_xy_position(x = "Group")
+bxp + 
+  stat_pvalue_manual(stat.test, tip.length = 0) +
+  labs(subtitle = get_test_label(stat.test, detailed = TRUE))
+

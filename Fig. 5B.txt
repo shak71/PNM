@@ -1,0 +1,12 @@
+library(ggplot2)
+library(readr)
+
+data <- read.delim("Anacom_Nodule_types.txt")
+data
+
+
+data$Genus<-as.factor(data$Genus)
+
+p <- ggplot(data = data, aes(x = clr, y = W))+
+    geom_point(aes(color = Genus, size = W))
+p

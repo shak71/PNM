@@ -1,0 +1,52 @@
+library(dplyr)
+library(phyloseq)
+library(microViz)
+
+##
+PNM <- readRDS(file = "PNM.rds")
+
+PNM
+
+phyloseq-class experiment-level object
+otu_table()   OTU Table:         [ 492 taxa and 23 samples ]
+sample_data() Sample Data:       [ 23 samples by 9 sample variables ]
+tax_table()   Taxonomy Table:    [ 492 taxa by 7 taxonomic ranks ]
+phy_tree()    Phylogenetic Tree: [ 492 tips and 488 internal nodes ]
+
+#
+Remove the mostly unclassified species-level data, drop the rare taxa, remove uncultured taxonomy, and fix the taxonomy of the rest. 
+
+psq <- PNM %>% 
+  tax_mutate(Species = NULL) %>% 
+  tax_filter(min_prevalence = 5) %>% 
+  tax_fix(unknowns = c("uncultured")) %>% 
+  ps_filter()
+
+psq
+
+phyloseq-class experiment-level object
+otu_table()   OTU Table:         [ 55 taxa and 23 samples ]
+sample_data() Sample Data:       [ 23 samples by 9 sample variables ]
+tax_table()   Taxonomy Table:    [ 55 taxa by 6 taxonomic ranks ]
+phy_tree()    Phylogenetic Tree: [ 55 tips and 54 internal nodes ]
+
+### Visualise the microbial composition 
+
+psq %>% 
+  tax_transform("compositional", rank = "Genus") %>% 
+  comp_heatmap()
+
+## Swap to a symmetrical colour palette for transformations for “clr” and 
+this is the default symmetrical palette.
+
+psq %>% 
+  tax_transform("clr", rank = "Genus") %>% 
+  comp_heatmap(colors = heat_palette(sym = TRUE), name = "CLR")
+
+## To show sample name
+psq %>% 
+  tax_transform("clr", rank = "Genus") %>% 
+  comp_heatmap(samples = TRUE, sample_names_show = TRUE, colors = heat_palette(sym = TRUE), name = "CLR")
+
+
+  
